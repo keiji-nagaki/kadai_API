@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="css/main.css">
+  <title>現在地と天気</title>
+
+  <style>
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    #map {
+      height: calc(70% - 102px);
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>現在地と天気</h1>
+  <div id="time"></div>
+  <p class=weather>福岡の天気</p>
+  <div class=weather id="weather"></div>
+  <div id="map"></div>
+
+
+  <script src=" https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js">
+  </script>
+  <script src='https://www.bing.com/api/maps/mapcontrol?key=
+    async defer></script>
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=fetch" crossorigin="anonymous"></script>
+
+  <script src="https://api.aoikujira.com/tenki/week.php?fmt=json&city=346"></script>
+
+  <script>
+    // 現在時刻をtimeに表示
+    fetch(' https://api.aoikujira.com/time/get.php') .then(response=> response.text())
+      .then(data => $("#time").html(data));
+    </script>
+
+  <!-- <script>
+    const url = 'https://api.aoikujira.com/tenki/week.php?fmt=json&city=346';
+    // リクエストの送信
+    axios.get(url)
+      //
+      .then(function (response) {
+        console.log(response)
+      })
+  </script> -->
+
+  <script>
+    // 天気APIにアクセス --- (*1)
+    const api = 'https://api.aoikujira.com/tenki/week.php?fmt=json&city=346'
+    fetch(api)
+      .then(res => res.json())
+      .then(data => tenki(data))
+
+    // 結果を表示 --- (*2)
+    function tenki(data) {
+      let s = ''
+      const fukuoka = data[346] // 福岡の情報 --- (*3)
+      console.log(data[346])
+
+      // 1日ずつのデータを表示-- - (* 4)
+      for (let row of fukuoka) {
+        console.log(row) // デバッグ表示
+        $("#weather").html(s += `
+         <ul><li>${row['date']}の天気</li>
+          <li>天気：${row['forecast']}</li>
+          <li>気温：${row['maxtemp']}度</li>
+        <li>風: ${row['winds']}</li></ul>
+      `)
+      }
+
+    }
+  </script>
+
+
+  <script>
+    // 位置情報を取得できた時の関数coords
+    function mapsInit(position) {
+      console.log(position.coords.latitude)
+      console.log(position.coords.longitude)
+      const lat = position.coords.latitude
+      const lng = position.coords.longitude
+      console.log(lat, lng)
+
+      map = new Microsoft.Maps.Map("#map", {
+        center: {
+          latitude: lat,
+          longitude: lng,
+        },
+        zoom: 15,
+
+      });
+    }
+
+
+    function showError(error) {
+      const errorMessages = [
+        "位置情報が許可されてません",
+        "現在位置を特定できません",
+        "位置情報を取得する前にタイムアウトになりました",
+      ];
+      alert(`error: ${errorMessages[error.code - 1]}`);
+
+    }
+
+
+    const option = {
+      enableHighAccuracy: true,
+      maximumAge: 20000,
+      timeout: 1000000,
+    }
+
+    window.onload = function () {
+      navigator.geolocation.getCurrentPosition(mapsInit, showError, option);
+    }
+  </script>
+
+</body>
+
+</html>
